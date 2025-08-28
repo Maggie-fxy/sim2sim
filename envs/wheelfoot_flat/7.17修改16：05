@@ -1,0 +1,38 @@
+实现总结
+1.配置文件修改：
+在wheelfoot_flat_config.py的domain_rand类中添加了机械臂随机化相关参数
+添加了randomize_arm_position（是否随机化位置）和arm_position_range（位置随机化范围）
+添加了randomize_arm_orientation（是否随机化方向）和arm_orientation_range（方向随机化范围）
+2.环境代码修改：
+在wheelfoot_flat.py中添加了_randomize_arm_pose方法，实现机械臂随机化
+在reset_idx方法中调用了_randomize_arm_pose，确保每次环境重置时都会随机化机械臂
+3.机械臂随机化实现：
+位置随机化：通过修改机械臂基座(airbot_arm_base)的刚体状态来实现位置随机化
+方向随机化：通过修改机械臂关节(J1-J6以及airbot_arm_joint)的角度来实现方向随机化
+使用Isaac Gym的API来更新刚体状态和关节角度
+
+使用方法
+确保使用包含机械臂的URDF文件：
+python
+# 在wheelfoot_flat_config.py中修改asset.file
+file = "{LEGGED_GYM_ROOT_DIR}/resources/robots/WF_TRON1A/urdf/robot_with_arm.urdf"
+通过配置文件控制随机化参数：
+python
+# 启用/禁用机械臂位置随机化
+randomize_arm_position = True
+# 设置位置随机化范围（米）
+arm_position_range = [-0.05, 0.05]  # 在x,y,z方向上随机偏移±5cm
+
+# 启用/禁用机械臂方向随机化
+randomize_arm_orientation = True
+# 设置方向随机化范围（弧度）
+arm_orientation_range = [-0.1, 0.1]  # 关节角度随机偏移±0.1弧度
+
+工作原理
+1.环境重置时：当环境重置（例如在训练开始或一个episode结束时），reset_idx方法会被调用。
+2.机械臂随机化：如果配置中启用了机械臂随机化，_randomize_arm_pose方法会被调用：
+首先查找机械臂相关的关节和刚体
+根据配置生成随机偏移值
+应用这些偏移到机械臂基座位置和关节角度
+使用Isaac Gym的API更新物理引擎中的状态
+3.训练效果：这种随机化可以增强策略的鲁棒性，使机器人能够适应机械臂在不同位置和方向的情况，提高泛化能力。
